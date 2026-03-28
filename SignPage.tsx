@@ -154,7 +154,7 @@ export default function SignPage() {
     try {
       const r = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ jobId, token, sig: sigDataUrl }),
       })
       const d = await r.json()
