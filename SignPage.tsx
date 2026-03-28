@@ -27,7 +27,12 @@ function fmt(n: number) {
 
 function fmtDate(s: string | Date) {
   if (!s) return 'TBD'
-  const d = typeof s === 'string' ? new Date(s) : s
+  // If it's already a formatted string (e.g. "Apr 15, 2026"), return as-is
+  if (typeof s === 'string' && !/^\d{4}-\d{2}|^\d+$/.test(s.trim())) return s
+  // Parse date — add T12:00:00 to avoid UTC midnight timezone-shift bug
+  const str = typeof s === 'string' ? s : s.toISOString()
+  const normalized = str.includes('T') ? str : str.slice(0, 10) + 'T12:00:00'
+  const d = new Date(normalized)
   if (isNaN(d.getTime())) return String(s)
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
@@ -436,15 +441,26 @@ export default function SignPage() {
     if (!sig2) return
     setSubmitting2(true)
     try {
+      // Apps Script blocks CORS preflight on JSON POSTs — use form-encoded instead
+      // which sends as a simple request with no preflight
+      const params = new URLSearchParams()
+      params.append('jobId', jobId)
+      params.append('token', token)
+      params.append('sig',  sig1)
+      params.append('sig2', sig2)
+
       const r = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId, token, sig: sig1, sig2 }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
       })
-      const d = await r.json()
+      const text = await r.text()
+      let d: { success?: boolean; error?: string } = {}
+      try { d = JSON.parse(text) } catch { d = { error: text } }
       if (d.success) setStep('done')
       else setError(d.error || 'Signing failed. Please contact us.')
-    } catch {
+    } catch (err) {
+      console.error('Submit error:', err)
       setError('Could not submit. Please try again.')
     } finally {
       setSubmitting2(false)
