@@ -11,6 +11,7 @@ interface JobData {
   job: {
     package: string; pkgPrice: number; pkgRateLabel: string
     addonLines: { name: string; price: number }[]
+    customLineItems: { name: string; description: string; unitType: string; unitCost: number; unitQty: number; total: number }[]
     addons: string; date: string; startTime: string
     total: number; deposit: number; balance: number
     tripMiles: number; tripCharge: number; discount: number; notes: string
@@ -362,6 +363,17 @@ function AgreementText({ d }: { d: JobData }) {
                 <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(a.price)}</td>
               </tr>
             ))}
+            {/* Custom line items */}
+            {(job.customLineItems || []).map(cl => (
+              <tr key={cl.name}>
+                <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>
+                  {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                  {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}:
+                </td>
+                <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(cl.total)}</td>
+              </tr>
+            ))}
+
             {/* Trip */}
             {job.tripCharge > 0 && (
               <tr>
@@ -629,6 +641,22 @@ export default function SignPage() {
             <div key={a.name} style={{ ...row, borderColor: '#F1F5F9' }}>
               <span style={{ fontSize: 13, color: '#64748B' }}>+ {a.name}</span>
               <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(a.price)}</span>
+            </div>
+          ))}
+
+          {/* Custom line items */}
+          {(job.customLineItems || []).map(cl => (
+            <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
+              <span style={{ fontSize: 13, color: '#64748B' }}>
+                + {cl.name}
+                {cl.description && <span style={{ color: '#94A3B8' }}> — {cl.description}</span>}
+                {cl.unitType === 'hourly' && (
+                  <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>
+                    {cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr
+                  </span>
+                )}
+              </span>
+              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
             </div>
           ))}
 
