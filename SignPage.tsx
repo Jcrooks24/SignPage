@@ -9,7 +9,9 @@ interface JobData {
   error?: string
   client: { name: string; email: string; phone: string; address: string }
   job: {
-    package: string; addons: string; date: string; startTime: string
+    package: string; pkgPrice: number; pkgRateLabel: string
+    addonLines: { name: string; price: number }[]
+    addons: string; date: string; startTime: string
     total: number; deposit: number; balance: number
     tripMiles: number; tripCharge: number; discount: number; notes: string
   }
@@ -334,21 +336,61 @@ function AgreementText({ d }: { d: JobData }) {
         <div style={{ fontWeight: 700, fontSize: 12, color: '#0F4C35', marginBottom: 8, letterSpacing: '.04em' }}>SERVICES BOOKED UNDER THIS AGREEMENT</div>
         <table style={{ width: '100%', fontSize: 12 }}>
           <tbody>
-            {([
-              ['Job Reference', d.jobId],
-              ['Service Date', `${fmtDate(job.date)}${job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}`],
-              ['Package', job.package],
-              ...(addons.length ? [['Add-ons', addons.join(', ')]] : []),
-              ...(job.tripCharge > 0 ? [['Trip Charge', `${fmt(job.tripCharge)} (${job.tripMiles} mi)`]] : []),
-              ...(job.discount > 0 ? [['Discount', `-${fmt(job.discount)}`]] : []),
-              ['Total', fmt(job.total)],
-              ...(job.deposit > 0 ? [['Deposit Due', fmt(job.deposit)], ['Balance at Service', fmt(job.balance)]] : []),
-            ] as [string, string][]).map(([k, v]) => (
-              <tr key={k}>
-                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600, width: 140 }}>{k}:</td>
-                <td style={{ padding: '2px 0', color: '#0F1923', fontWeight: k === 'Total' ? 700 : 400 }}>{v}</td>
+            {/* Date */}
+            <tr>
+              <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600, width: 140 }}>Job Reference:</td>
+              <td style={{ padding: '2px 0', color: '#0F1923' }}>{d.jobId}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Service Date:</td>
+              <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
+            </tr>
+            {/* Package line */}
+            <tr>
+              <td style={{ padding: '6px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
+              <td style={{ padding: '6px 0 2px', color: '#0F1923' }}>{fmt(job.pkgPrice)}</td>
+            </tr>
+            {job.pkgRateLabel && (
+              <tr>
+                <td colSpan={2} style={{ padding: '0 8px 4px', color: '#94A3B8', fontSize: 10 }}>{job.pkgRateLabel}</td>
+              </tr>
+            )}
+            {/* Addon lines */}
+            {(job.addonLines || []).map(a => (
+              <tr key={a.name}>
+                <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>{a.name}:</td>
+                <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(a.price)}</td>
               </tr>
             ))}
+            {/* Trip */}
+            {job.tripCharge > 0 && (
+              <tr>
+                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Trip charge ({job.tripMiles} mi):</td>
+                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmt(job.tripCharge)}</td>
+              </tr>
+            )}
+            {/* Discount */}
+            {job.discount > 0 && (
+              <tr>
+                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Discount:</td>
+                <td style={{ padding: '2px 0', color: '#0F4C35' }}>−{fmt(job.discount)}</td>
+              </tr>
+            )}
+            {/* Total */}
+            <tr style={{ borderTop: '1px solid #BBF7D0' }}>
+              <td style={{ padding: '6px 8px 2px 0', color: '#0F4C35', fontWeight: 700 }}>Total:</td>
+              <td style={{ padding: '6px 0 2px', color: '#0F4C35', fontWeight: 700 }}>{fmt(job.total)}</td>
+            </tr>
+            {job.deposit > 0 && <>
+              <tr>
+                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Deposit Due:</td>
+                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmt(job.deposit)}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Balance at Service:</td>
+                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmt(job.balance)}</td>
+              </tr>
+            </>}
           </tbody>
         </table>
       </div>
@@ -571,30 +613,47 @@ export default function SignPage() {
               </span>
             </div>
           )}
-          <div style={row}>
-            <span style={{ fontSize: 14, color: '#64748B' }}>{job.package}</span>
+          {/* Package */}
+          <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
+            <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>{fmt(job.pkgPrice)}</span>
           </div>
-          {addons.map(a => (
-            <div key={a} style={{ ...row, borderColor: '#F8FAFC' }}>
-              <span style={{ fontSize: 13, color: '#94A3B8' }}>+ {a}</span>
-            </div>
-          ))}
-          {job.tripCharge > 0 && (
-            <div style={row}>
-              <span style={{ fontSize: 13, color: '#64748B' }}>Trip ({job.tripMiles} mi)</span>
-              <span style={{ fontSize: 13, color: '#0F1923' }}>{fmt(job.tripCharge)}</span>
+          {job.pkgRateLabel && (
+            <div style={{ fontSize: 11, color: '#94A3B8', padding: '0 0 9px', borderBottom: '1px solid #F1F5F9' }}>
+              {job.pkgRateLabel}
             </div>
           )}
+
+          {/* Add-ons — each with price */}
+          {(job.addonLines || []).map(a => (
+            <div key={a.name} style={{ ...row, borderColor: '#F1F5F9' }}>
+              <span style={{ fontSize: 13, color: '#64748B' }}>+ {a.name}</span>
+              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(a.price)}</span>
+            </div>
+          ))}
+
+          {/* Trip charge */}
+          {job.tripCharge > 0 && (
+            <div style={row}>
+              <span style={{ fontSize: 13, color: '#64748B' }}>Trip charge ({job.tripMiles} mi)</span>
+              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(job.tripCharge)}</span>
+            </div>
+          )}
+
+          {/* Discount */}
           {job.discount > 0 && (
             <div style={row}>
               <span style={{ fontSize: 13, color: '#64748B' }}>Discount</span>
-              <span style={{ fontSize: 13, color: '#0F4C35' }}>−{fmt(job.discount)}</span>
+              <span style={{ fontSize: 13, color: '#0F4C35', fontWeight: 600 }}>−{fmt(job.discount)}</span>
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 12, marginTop: 4 }}>
+
+          {/* Total */}
+          <div style={{ borderTop: '2px solid #0F1923', marginTop: 8, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: '#0F1923' }}>Total</span>
             <span style={{ fontSize: 24, fontWeight: 800, color: '#0F4C35' }}>{fmt(job.total)}</span>
           </div>
+
           {job.deposit > 0 && (
             <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '10px 14px', marginTop: 12, fontSize: 13, color: '#475569' }}>
               Deposit at signing: <strong style={{ color: '#0F4C35' }}>{fmt(job.deposit)}</strong>
