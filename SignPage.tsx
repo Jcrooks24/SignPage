@@ -260,7 +260,7 @@ function AgreementText({ d }: { d: JobData }) {
           ))}
         </tbody>
       </table>
-      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4, color: '#475569' }}>2b. Optional Add-Ons</div>
+      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4, color: '#475569' }}>2c. Optional Add-Ons</div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 10 }}>
         <thead>
           <tr style={{ background: '#F1F5F9' }}>
@@ -315,7 +315,7 @@ function AgreementText({ d }: { d: JobData }) {
       <P>MM provides all cleaning supplies and equipment. If the Client requests specific products, the Client must supply them. MM is not responsible for results from Client-supplied products.</P>
 
       <Sec n="10" t="Access to Property" />
-      <P>Client must ensure safe, unobstructed access at the scheduled start time. For move-out cleans, the property must be fully vacated. Client is responsible for providing keys, door codes, and adequate parking. See Section 5c for lockout policy.</P>
+      <P>Client must ensure safe, unobstructed access at the scheduled start time. For move-out cleans, the property must be fully vacated and accessible before the crew arrives. Furniture, personal belongings, and debris must be removed in advance unless pre-arranged. For properties being staged, cleaners can work around them. Cleaners can remove up to one 50-gallon trash bag of debris at no additional charge. Client is responsible for providing keys, door codes, gate codes, and adequate parking. MM will not retain keys beyond the day of service. See Section 5c for lockout policy.</P>
 
       <Sec n="11-12" t="Confidentiality & Chemical Use" />
       <P>MM crew will not photograph or discuss the interior of Client's property with any third party. MM uses professional-grade chemicals per EPA/OSHA guidelines. Clients must disclose any known allergies or chemical sensitivities prior to scheduling.</P>
@@ -330,7 +330,7 @@ function AgreementText({ d }: { d: JobData }) {
       <P>Client agrees to notify MM in writing before initiating legal action and allow MM no less than 10 business days to attempt resolution. Good-faith mediation is required before litigation. This Agreement is governed by the laws of the State of Montana.</P>
 
       <Sec n="17" t="Additional Terms" />
-      <P>Delays caused by third parties are billable at normal hourly rates. Any amendment to this Agreement must be in writing and signed by both parties. If any provision is found unenforceable, remaining provisions remain in full force and effect.</P>
+      <P>Delays caused by third parties are billable at normal hourly rates. Client is responsible for securing adequate parking and access for MM vehicles; tickets, towing, or delays caused by inadequate access are billable to the Client. Any amendment to this Agreement must be in writing and signed by both parties. If any provision is found unenforceable, remaining provisions remain in full force and effect. MM reserves the right to update these terms with written notice to the Client. Updated terms will not apply retroactively to confirmed jobs.</P>
 
       {/* Booked job summary */}
       <div style={{ margin: '20px 0', padding: '14px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8 }}>
