@@ -11,7 +11,13 @@ interface JobData {
   job: {
     package: string; pkgPrice: number; pkgRateLabel: string
     addonLines: { name: string; price: number }[]
-    multiDaySchedule: { day: number; date: string; startTime: string; label: string; package?: string; notes?: string; addons?: string[]; customLines?: { name: string; description: string; unitType: string; unitCost: number; unitQty: number }[] }[]
+    multiDaySchedule: {
+      day: number; date: string; startTime: string; label: string
+      package?: string; pkgPrice?: number; pkgRateLabel?: string
+      notes?: string; dayTotal?: number
+      addonLines?: { name: string; price: number }[]
+      customLineItems?: { name: string; description: string; unitType: string; unitCost: number; unitQty: number; total: number }[]
+    }[]
     customLineItems: { name: string; description: string; unitType: string; unitCost: number; unitQty: number; total: number }[]
     addons: string; date: string; startTime: string
     total: number; deposit: number; balance: number
@@ -348,15 +354,16 @@ function AgreementText({ d }: { d: JobData }) {
                 <tr><td style={{ padding: '4px 8px 2px 0', color: '#475569', fontWeight: 700 }} colSpan={2}>Schedule ({job.multiDaySchedule.length} days):</td></tr>
                 {job.multiDaySchedule.map(d => (
                   <tr key={d.day}>
-                    <td style={{ padding: '3px 8px 3px 12px', color: '#475569', fontWeight: 600, verticalAlign: 'top' }}>
-                      Day {d.day}{d.label ? ` — ${d.label}` : ''}:
-                      {d.package && d.package !== 'N/A' && <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{d.package}</div>}
-                      {(d.addons || []).map(a => <div key={a} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {a}</div>)}
-                      {(d.customLines || []).map(cl => <div key={cl.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {cl.name}</div>)}
+                    <td style={{ padding: '4px 8px 4px 12px', color: '#475569', fontWeight: 600, verticalAlign: 'top' }}>
+                      Day {d.day}{d.label ? ` — ${d.label}` : ''}
+                      <div style={{ fontSize: 10, color: '#6B7E8A', fontWeight: 400 }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</div>
+                      {d.package && d.package !== 'N/A' && <div style={{ fontSize: 10, color: '#475569', fontWeight: 500, marginTop: 2 }}>{d.package}</div>}
+                      {(d.addonLines || []).map(a => <div key={a.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {a.name}</div>)}
+                      {(d.customLineItems || []).map(cl => <div key={cl.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}</div>)}
+                      {d.notes && <div style={{ fontSize: 10, color: '#64748B', fontStyle: 'italic', marginTop: 2 }}>{d.notes}</div>}
                     </td>
-                    <td style={{ padding: '3px 0', color: '#0F1923', verticalAlign: 'top' }}>
-                      {fmtDate(d.date)} at {fmtTime(d.startTime)}
-                      {d.notes && <div style={{ fontSize: 10, color: '#64748B', fontStyle: 'italic' }}>{d.notes}</div>}
+                    <td style={{ padding: '4px 0', color: '#0F1923', verticalAlign: 'top', textAlign: 'right' }}>
+                      {d.dayTotal !== undefined && d.dayTotal > 0 ? <strong>{fmt(d.dayTotal)}</strong> : ''}
                     </td>
                   </tr>
                 ))}
@@ -654,25 +661,36 @@ export default function SignPage() {
                     </span>
                     <span style={{ fontSize: 13, color: '#0F1923' }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</span>
                   </div>
+                  {/* Package line */}
                   {d.package && d.package !== 'N/A' && (
-                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{d.package}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginTop: 3 }}>
+                      <span>{d.package}{d.pkgRateLabel && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{d.pkgRateLabel}</span>}</span>
+                      <span>{fmt(d.pkgPrice || 0)}</span>
+                    </div>
                   )}
-                  {(d.addons || []).map(a => (
-                    <div key={a} style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>+ {a}</div>
+                  {/* Addon lines */}
+                  {(d.addonLines || []).map(a => (
+                    <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                      <span>+ {a.name}</span>
+                      <span>{fmt(a.price)}</span>
+                    </div>
                   ))}
-                  {(d.customLines || []).map(cl => {
-                    const qty = cl.unitQty || 1
-                    const cost = cl.unitCost || 0
-                    const total = cl.unitType === 'flat' ? cost : Math.round(cost * qty)
-                    return (
-                      <div key={cl.name} style={{ fontSize: 11, color: '#94A3B8', marginTop: 1, display: 'flex', justifyContent: 'space-between' }}>
-                        <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}</span>
-                        <span>{fmt(total)}</span>
-                      </div>
-                    )
-                  })}
+                  {/* Custom line items */}
+                  {(d.customLineItems || []).map(cl => (
+                    <div key={cl.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                      <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}{cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10 }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}</span>
+                      <span>{fmt(cl.total)}</span>
+                    </div>
+                  ))}
+                  {/* Day subtotal */}
+                  {(d.dayTotal !== undefined && d.dayTotal > 0) && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#0F1923', marginTop: 5, paddingTop: 5, borderTop: '1px solid #E2E8F0' }}>
+                      <span>Day {d.day} subtotal</span>
+                      <span>{fmt(d.dayTotal)}</span>
+                    </div>
+                  )}
                   {d.notes && (
-                    <div style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', marginTop: 2 }}>{d.notes}</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', marginTop: 3 }}>{d.notes}</div>
                   )}
                 </div>
               ))}
