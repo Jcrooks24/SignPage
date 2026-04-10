@@ -718,16 +718,15 @@ export default function SignPage() {
             </>
           )}
 
-          {/* Add-ons — each with price */}
-          {(job.addonLines || []).map(a => (
+          {/* Add-ons and custom lines — only for single-day jobs */}
+          {!(job.multiDaySchedule || []).length && (job.addonLines || []).map(a => (
             <div key={a.name} style={{ ...row, borderColor: '#F1F5F9' }}>
               <span style={{ fontSize: 13, color: '#64748B' }}>+ {a.name}</span>
               <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(a.price)}</span>
             </div>
           ))}
 
-          {/* Custom line items */}
-          {(job.customLineItems || []).map(cl => (
+          {!(job.multiDaySchedule || []).length && (job.customLineItems || []).map(cl => (
             <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
               <span style={{ fontSize: 13, color: '#64748B' }}>
                 + {cl.name}
@@ -737,6 +736,17 @@ export default function SignPage() {
                     {cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr
                   </span>
                 )}
+              </span>
+              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
+            </div>
+          ))}
+
+          {/* Job-level custom lines for multi-day (shared charges) */}
+          {(job.multiDaySchedule || []).length > 0 && (job.customLineItems || []).map(cl => (
+            <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
+              <span style={{ fontSize: 13, color: '#64748B' }}>
+                + {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}
               </span>
               <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
             </div>
