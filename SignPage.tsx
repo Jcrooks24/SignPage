@@ -11,7 +11,7 @@ interface JobData {
   job: {
     package: string; pkgPrice: number; pkgRateLabel: string
     addonLines: { name: string; price: number }[]
-    multiDaySchedule: { day: number; date: string; startTime: string; label: string; package?: string; notes?: string }[]
+    multiDaySchedule: { day: number; date: string; startTime: string; label: string; package?: string; notes?: string; addons?: string[]; customLines?: { name: string; description: string; unitType: string; unitCost: number; unitQty: number }[] }[]
     customLineItems: { name: string; description: string; unitType: string; unitCost: number; unitQty: number; total: number }[]
     addons: string; date: string; startTime: string
     total: number; deposit: number; balance: number
@@ -351,6 +351,8 @@ function AgreementText({ d }: { d: JobData }) {
                     <td style={{ padding: '3px 8px 3px 12px', color: '#475569', fontWeight: 600, verticalAlign: 'top' }}>
                       Day {d.day}{d.label ? ` — ${d.label}` : ''}:
                       {d.package && d.package !== 'N/A' && <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{d.package}</div>}
+                      {(d.addons || []).map(a => <div key={a} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {a}</div>)}
+                      {(d.customLines || []).map(cl => <div key={cl.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {cl.name}</div>)}
                     </td>
                     <td style={{ padding: '3px 0', color: '#0F1923', verticalAlign: 'top' }}>
                       {fmtDate(d.date)} at {fmtTime(d.startTime)}
@@ -651,6 +653,20 @@ export default function SignPage() {
                   {d.package && d.package !== 'N/A' && (
                     <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{d.package}</div>
                   )}
+                  {(d.addons || []).map(a => (
+                    <div key={a} style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>+ {a}</div>
+                  ))}
+                  {(d.customLines || []).map(cl => {
+                    const qty = cl.unitQty || 1
+                    const cost = cl.unitCost || 0
+                    const total = cl.unitType === 'flat' ? cost : Math.round(cost * qty)
+                    return (
+                      <div key={cl.name} style={{ fontSize: 11, color: '#94A3B8', marginTop: 1, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}</span>
+                        <span>{fmt(total)}</span>
+                      </div>
+                    )
+                  })}
                   {d.notes && (
                     <div style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', marginTop: 2 }}>{d.notes}</div>
                   )}
