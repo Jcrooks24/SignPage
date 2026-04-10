@@ -367,15 +367,19 @@ function AgreementText({ d }: { d: JobData }) {
                 <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
               </tr>
             )}
-            {/* Package line */}
-            <tr>
-              <td style={{ padding: '6px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
-              <td style={{ padding: '6px 0 2px', color: '#0F1923' }}>{fmt(job.pkgPrice)}</td>
-            </tr>
-            {job.pkgRateLabel && (
-              <tr>
-                <td colSpan={2} style={{ padding: '0 8px 4px', color: '#94A3B8', fontSize: 10 }}>{job.pkgRateLabel}</td>
-              </tr>
+            {/* Package line — hide if N/A */}
+            {job.package && job.package !== 'N/A' && (
+              <>
+                <tr>
+                  <td style={{ padding: '6px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
+                  <td style={{ padding: '6px 0 2px', color: '#0F1923' }}>{fmt(job.pkgPrice)}</td>
+                </tr>
+                {job.pkgRateLabel && (
+                  <tr>
+                    <td colSpan={2} style={{ padding: '0 8px 4px', color: '#94A3B8', fontSize: 10 }}>{job.pkgRateLabel}</td>
+                  </tr>
+                )}
+              </>
             )}
             {/* Addon lines */}
             {(job.addonLines || []).map(a => (
@@ -681,15 +685,19 @@ export default function SignPage() {
               </span>
             </div>
           ) : null}
-          {/* Package */}
-          <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
-            <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>{fmt(job.pkgPrice)}</span>
-          </div>
-          {job.pkgRateLabel && (
-            <div style={{ fontSize: 11, color: '#94A3B8', padding: '0 0 9px', borderBottom: '1px solid #F1F5F9' }}>
-              {job.pkgRateLabel}
-            </div>
+          {/* Package — hide if N/A */}
+          {job.package && job.package !== 'N/A' && (
+            <>
+              <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
+                <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>{fmt(job.pkgPrice)}</span>
+              </div>
+              {job.pkgRateLabel && (
+                <div style={{ fontSize: 11, color: '#94A3B8', padding: '0 0 9px', borderBottom: '1px solid #F1F5F9' }}>
+                  {job.pkgRateLabel}
+                </div>
+              )}
+            </>
           )}
 
           {/* Add-ons — each with price */}
