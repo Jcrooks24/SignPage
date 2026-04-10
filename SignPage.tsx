@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JobData {
@@ -344,83 +344,121 @@ function AgreementText({ d }: { d: JobData }) {
         <div style={{ fontWeight: 700, fontSize: 12, color: '#0F4C35', marginBottom: 8, letterSpacing: '.04em' }}>SERVICES BOOKED UNDER THIS AGREEMENT</div>
         <table style={{ width: '100%', fontSize: 12 }}>
           <tbody>
-            {/* Date */}
             <tr>
-              <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600, width: 140 }}>Job Reference:</td>
-              <td style={{ padding: '2px 0', color: '#0F1923' }}>{d.jobId}</td>
+              <td style={{ padding: '2px 8px 4px 0', color: '#475569', fontWeight: 600, width: 140 }}>Job Reference:</td>
+              <td style={{ padding: '2px 0 4px', color: '#0F1923' }}>{d.jobId}</td>
             </tr>
+
             {(job.multiDaySchedule || []).length > 0 ? (
+              /* Multi-day: one row per day with full breakdown */
               <>
-                <tr><td style={{ padding: '4px 8px 2px 0', color: '#475569', fontWeight: 700 }} colSpan={2}>Schedule ({job.multiDaySchedule.length} days):</td></tr>
-                {job.multiDaySchedule.map(d => (
-                  <tr key={d.day}>
-                    <td style={{ padding: '4px 8px 4px 12px', color: '#475569', fontWeight: 600, verticalAlign: 'top' }}>
-                      Day {d.day}{d.label ? ` — ${d.label}` : ''}
-                      <div style={{ fontSize: 10, color: '#6B7E8A', fontWeight: 400 }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</div>
-                      {d.package && d.package !== 'N/A' && <div style={{ fontSize: 10, color: '#475569', fontWeight: 500, marginTop: 2 }}>{d.package}</div>}
-                      {(d.addonLines || []).map(a => <div key={a.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {a.name}</div>)}
-                      {(d.customLineItems || []).map(cl => <div key={cl.name} style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}</div>)}
-                      {d.notes && <div style={{ fontSize: 10, color: '#64748B', fontStyle: 'italic', marginTop: 2 }}>{d.notes}</div>}
+                {job.multiDaySchedule.map(day => (
+                  <React.Fragment key={day.day}>
+                    {/* Day header */}
+                    <tr>
+                      <td colSpan={2} style={{ padding: '6px 8px 3px 0', fontWeight: 700, color: '#0F1923', fontSize: 12, borderTop: '1px solid #E2E8F0' }}>
+                        Day {day.day}{day.label ? ` — ${day.label}` : ''}
+                        <span style={{ fontWeight: 400, color: '#64748B', marginLeft: 8, fontSize: 11 }}>{fmtDate(day.date)} at {fmtTime(day.startTime)}</span>
+                      </td>
+                    </tr>
+                    {/* Package */}
+                    {day.package && day.package !== 'N/A' && (
+                      <tr>
+                        <td style={{ padding: '2px 8px 2px 12px', color: '#475569', fontWeight: 600, fontSize: 11 }}>
+                          {day.package}
+                          {day.pkgRateLabel && <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{day.pkgRateLabel}</div>}
+                        </td>
+                        <td style={{ padding: '2px 0', color: '#0F1923', fontSize: 11 }}>{fmt(day.pkgPrice || 0)}</td>
+                      </tr>
+                    )}
+                    {/* Addons */}
+                    {(day.addonLines || []).map(a => (
+                      <tr key={a.name}>
+                        <td style={{ padding: '1px 8px 1px 16px', color: '#94A3B8', fontSize: 11 }}>+ {a.name}</td>
+                        <td style={{ padding: '1px 0', color: '#94A3B8', fontSize: 11 }}>{fmt(a.price)}</td>
+                      </tr>
+                    ))}
+                    {/* Custom lines */}
+                    {(day.customLineItems || []).map(cl => (
+                      <tr key={cl.name}>
+                        <td style={{ padding: '1px 8px 1px 16px', color: '#94A3B8', fontSize: 11 }}>
+                          + {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                          {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10 }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}
+                        </td>
+                        <td style={{ padding: '1px 0', color: '#94A3B8', fontSize: 11 }}>{fmt(cl.total)}</td>
+                      </tr>
+                    ))}
+                    {/* Day notes */}
+                    {day.notes && (
+                      <tr><td colSpan={2} style={{ padding: '1px 8px 3px 12px', color: '#64748B', fontSize: 10, fontStyle: 'italic' }}>{day.notes}</td></tr>
+                    )}
+                    {/* Day subtotal */}
+                    {(day.dayTotal || 0) > 0 && (
+                      <tr>
+                        <td style={{ padding: '3px 8px 3px 12px', color: '#475569', fontWeight: 600, fontSize: 11 }}>Day {day.day} subtotal</td>
+                        <td style={{ padding: '3px 0', color: '#0F1923', fontWeight: 700, fontSize: 11 }}>{fmt(day.dayTotal)}</td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+                {/* Shared job-level custom lines */}
+                {(job.customLineItems || []).map(cl => (
+                  <tr key={cl.name}>
+                    <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600, fontSize: 11, borderTop: '1px solid #E2E8F0' }}>
+                      {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                      {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}
                     </td>
-                    <td style={{ padding: '4px 0', color: '#0F1923', verticalAlign: 'top', textAlign: 'right' }}>
-                      {d.dayTotal !== undefined && d.dayTotal > 0 ? <strong>{fmt(d.dayTotal)}</strong> : ''}
-                    </td>
+                    <td style={{ padding: '2px 0', color: '#0F1923', fontSize: 11, borderTop: '1px solid #E2E8F0' }}>{fmt(cl.total)}</td>
                   </tr>
                 ))}
               </>
             ) : (
-              <tr>
-                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Service Date:</td>
-                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
-              </tr>
-            )}
-            {/* Package line — hide if N/A */}
-            {job.package && job.package !== 'N/A' && (
+              /* Single-day */
               <>
                 <tr>
-                  <td style={{ padding: '6px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
-                  <td style={{ padding: '6px 0 2px', color: '#0F1923' }}>{fmt(job.pkgPrice)}</td>
+                  <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Service Date:</td>
+                  <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
                 </tr>
-                {job.pkgRateLabel && (
-                  <tr>
-                    <td colSpan={2} style={{ padding: '0 8px 4px', color: '#94A3B8', fontSize: 10 }}>{job.pkgRateLabel}</td>
-                  </tr>
+                {job.package && job.package !== 'N/A' && (
+                  <>
+                    <tr>
+                      <td style={{ padding: '4px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
+                      <td style={{ padding: '4px 0 2px', color: '#0F1923' }}>{fmt(job.pkgPrice)}</td>
+                    </tr>
+                    {job.pkgRateLabel && <tr><td colSpan={2} style={{ padding: '0 8px 4px', color: '#94A3B8', fontSize: 10 }}>{job.pkgRateLabel}</td></tr>}
+                  </>
                 )}
+                {(job.addonLines || []).map(a => (
+                  <tr key={a.name}>
+                    <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>{a.name}:</td>
+                    <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(a.price)}</td>
+                  </tr>
+                ))}
+                {(job.customLineItems || []).map(cl => (
+                  <tr key={cl.name}>
+                    <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>
+                      {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                      {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}:
+                    </td>
+                    <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(cl.total)}</td>
+                  </tr>
+                ))}
               </>
             )}
-            {/* Addon lines */}
-            {(job.addonLines || []).map(a => (
-              <tr key={a.name}>
-                <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>{a.name}:</td>
-                <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(a.price)}</td>
-              </tr>
-            ))}
-            {/* Custom line items */}
-            {(job.customLineItems || []).map(cl => (
-              <tr key={cl.name}>
-                <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>
-                  {cl.name}{cl.description ? ` — ${cl.description}` : ''}
-                  {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}:
-                </td>
-                <td style={{ padding: '2px 0', color: '#64748B' }}>{fmt(cl.total)}</td>
-              </tr>
-            ))}
 
             {/* Trip */}
             {job.tripCharge > 0 && (
               <tr>
-                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Trip charge ({job.tripMiles} mi):</td>
-                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmt(job.tripCharge)}</td>
+                <td style={{ padding: '4px 8px 2px 0', color: '#475569', fontWeight: 600, borderTop: '1px solid #E2E8F0' }}>Trip charge ({job.tripMiles} mi):</td>
+                <td style={{ padding: '4px 0 2px', color: '#0F1923', borderTop: '1px solid #E2E8F0' }}>{fmt(job.tripCharge)}</td>
               </tr>
             )}
-            {/* Discount */}
             {job.discount > 0 && (
               <tr>
                 <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Discount:</td>
                 <td style={{ padding: '2px 0', color: '#0F4C35' }}>−{fmt(job.discount)}</td>
               </tr>
             )}
-            {/* Total */}
             <tr style={{ borderTop: '1px solid #BBF7D0' }}>
               <td style={{ padding: '6px 8px 2px 0', color: '#0F4C35', fontWeight: 700 }}>Total:</td>
               <td style={{ padding: '6px 0 2px', color: '#0F4C35', fontWeight: 700 }}>{fmt(job.total)}</td>
@@ -649,108 +687,100 @@ export default function SignPage() {
 
         <div style={card}>
           <span style={label}>Estimate summary</span>
-          {/* Multi-day schedule or single date */}
+
           {(job.multiDaySchedule || []).length > 0 ? (
+            /* ── Multi-day layout — one block per day, matches email ── */
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '.06em', textTransform: 'uppercase', padding: '6px 0 4px' }}>Schedule — {job.multiDaySchedule.length}-day job</div>
               {job.multiDaySchedule.map(d => (
-                <div key={d.day} style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: 8, marginBottom: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0F1923' }}>
+                <div key={d.day} style={{ borderBottom: '2px solid #E2E8F0', paddingBottom: 10, marginBottom: 10 }}>
+                  {/* Day header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', background: '#F8F7F4', margin: '0 -4px', padding: '6px 4px', borderRadius: 4, marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0F1923' }}>
                       Day {d.day}{d.label ? ` — ${d.label}` : ''}
                     </span>
-                    <span style={{ fontSize: 13, color: '#0F1923' }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>{fmtDate(d.date)} · {fmtTime(d.startTime)}</span>
                   </div>
-                  {/* Package line */}
+                  {/* Package */}
                   {d.package && d.package !== 'N/A' && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginTop: 3 }}>
-                      <span>{d.package}{d.pkgRateLabel && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8' }}>{d.pkgRateLabel}</span>}</span>
-                      <span>{fmt(d.pkgPrice || 0)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#475569', padding: '3px 0' }}>
+                      <span style={{ fontWeight: 600 }}>{d.package}
+                        {d.pkgRateLabel && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{d.pkgRateLabel}</span>}
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{fmt(d.pkgPrice || 0)}</span>
                     </div>
                   )}
-                  {/* Addon lines */}
+                  {/* Addons */}
                   {(d.addonLines || []).map(a => (
-                    <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
-                      <span>+ {a.name}</span>
-                      <span>{fmt(a.price)}</span>
+                    <div key={a.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94A3B8', padding: '2px 0 2px 8px' }}>
+                      <span>+ {a.name}</span><span>{fmt(a.price)}</span>
                     </div>
                   ))}
-                  {/* Custom line items */}
+                  {/* Custom lines */}
                   {(d.customLineItems || []).map(cl => (
-                    <div key={cl.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
-                      <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}{cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10 }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}</span>
+                    <div key={cl.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94A3B8', padding: '2px 0 2px 8px' }}>
+                      <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                        {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 10 }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}
+                      </span>
                       <span>{fmt(cl.total)}</span>
                     </div>
                   ))}
+                  {/* Notes */}
+                  {d.notes && <div style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', padding: '3px 0' }}>{d.notes}</div>}
                   {/* Day subtotal */}
-                  {(d.dayTotal !== undefined && d.dayTotal > 0) && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#0F1923', marginTop: 5, paddingTop: 5, borderTop: '1px solid #E2E8F0' }}>
-                      <span>Day {d.day} subtotal</span>
-                      <span>{fmt(d.dayTotal)}</span>
+                  {(d.dayTotal || 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#0F1923', paddingTop: 6, marginTop: 4, borderTop: '1px solid #E2E8F0' }}>
+                      <span>Day {d.day} subtotal</span><span>{fmt(d.dayTotal)}</span>
                     </div>
-                  )}
-                  {d.notes && (
-                    <div style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', marginTop: 3 }}>{d.notes}</div>
                   )}
                 </div>
               ))}
+              {/* Shared job-level custom lines */}
+              {(job.customLineItems || []).map(cl => (
+                <div key={cl.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', padding: '3px 0' }}>
+                  <span>+ {cl.name}{cl.description ? ` — ${cl.description}` : ''}
+                    {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>{cl.unitQty} hr @ ${cl.unitCost}/hr</span>}
+                  </span>
+                  <span>{fmt(cl.total)}</span>
+                </div>
+              ))}
             </>
-          ) : job.date ? (
-            <div style={row}>
-              <span style={{ fontSize: 14, color: '#64748B' }}>Service date</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>
-                {fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}
-              </span>
-            </div>
-          ) : null}
-          {/* Package — hide if N/A */}
-          {job.package && job.package !== 'N/A' && (
+          ) : (
+            /* ── Single-day layout ── */
             <>
-              <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
-                <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>{fmt(job.pkgPrice)}</span>
-              </div>
-              {job.pkgRateLabel && (
-                <div style={{ fontSize: 11, color: '#94A3B8', padding: '0 0 9px', borderBottom: '1px solid #F1F5F9' }}>
-                  {job.pkgRateLabel}
+              {job.date && (
+                <div style={row}>
+                  <span style={{ fontSize: 14, color: '#64748B' }}>Service date</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>
+                    {fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}
+                  </span>
                 </div>
               )}
+              {job.package && job.package !== 'N/A' && (
+                <>
+                  <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
+                    <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>{fmt(job.pkgPrice)}</span>
+                  </div>
+                  {job.pkgRateLabel && <div style={{ fontSize: 11, color: '#94A3B8', padding: '0 0 9px', borderBottom: '1px solid #F1F5F9' }}>{job.pkgRateLabel}</div>}
+                </>
+              )}
+              {(job.addonLines || []).map(a => (
+                <div key={a.name} style={{ ...row, borderColor: '#F1F5F9' }}>
+                  <span style={{ fontSize: 13, color: '#64748B' }}>+ {a.name}</span>
+                  <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(a.price)}</span>
+                </div>
+              ))}
+              {(job.customLineItems || []).map(cl => (
+                <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
+                  <span style={{ fontSize: 13, color: '#64748B' }}>
+                    + {cl.name}{cl.description && <span style={{ color: '#94A3B8' }}> — {cl.description}</span>}
+                    {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}
+                  </span>
+                  <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
+                </div>
+              ))}
             </>
           )}
-
-          {/* Add-ons and custom lines — only for single-day jobs */}
-          {!(job.multiDaySchedule || []).length && (job.addonLines || []).map(a => (
-            <div key={a.name} style={{ ...row, borderColor: '#F1F5F9' }}>
-              <span style={{ fontSize: 13, color: '#64748B' }}>+ {a.name}</span>
-              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(a.price)}</span>
-            </div>
-          ))}
-
-          {!(job.multiDaySchedule || []).length && (job.customLineItems || []).map(cl => (
-            <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
-              <span style={{ fontSize: 13, color: '#64748B' }}>
-                + {cl.name}
-                {cl.description && <span style={{ color: '#94A3B8' }}> — {cl.description}</span>}
-                {cl.unitType === 'hourly' && (
-                  <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>
-                    {cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr
-                  </span>
-                )}
-              </span>
-              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
-            </div>
-          ))}
-
-          {/* Job-level custom lines for multi-day (shared charges) */}
-          {(job.multiDaySchedule || []).length > 0 && (job.customLineItems || []).map(cl => (
-            <div key={cl.name} style={{ ...row, borderColor: '#F1F5F9' }}>
-              <span style={{ fontSize: 13, color: '#64748B' }}>
-                + {cl.name}{cl.description ? ` — ${cl.description}` : ''}
-                {cl.unitType === 'hourly' && <span style={{ display: 'block', fontSize: 11, color: '#94A3B8' }}>{cl.unitQty} hr{cl.unitQty !== 1 ? 's' : ''} @ ${cl.unitCost}/hr</span>}
-              </span>
-              <span style={{ fontSize: 13, color: '#64748B' }}>{fmt(cl.total)}</span>
-            </div>
-          ))}
 
           {/* Trip charge */}
           {job.tripCharge > 0 && (
