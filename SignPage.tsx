@@ -11,6 +11,7 @@ interface JobData {
   job: {
     package: string; pkgPrice: number; pkgRateLabel: string
     addonLines: { name: string; price: number }[]
+    multiDaySchedule: { day: number; date: string; startTime: string; label: string }[]
     customLineItems: { name: string; description: string; unitType: string; unitCost: number; unitQty: number; total: number }[]
     addons: string; date: string; startTime: string
     total: number; deposit: number; balance: number
@@ -342,10 +343,22 @@ function AgreementText({ d }: { d: JobData }) {
               <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600, width: 140 }}>Job Reference:</td>
               <td style={{ padding: '2px 0', color: '#0F1923' }}>{d.jobId}</td>
             </tr>
-            <tr>
-              <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Service Date:</td>
-              <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
-            </tr>
+            {(job.multiDaySchedule || []).length > 0 ? (
+              <>
+                <tr><td style={{ padding: '4px 8px 2px 0', color: '#475569', fontWeight: 700 }} colSpan={2}>Schedule ({job.multiDaySchedule.length} days):</td></tr>
+                {job.multiDaySchedule.map(d => (
+                  <tr key={d.day}>
+                    <td style={{ padding: '2px 8px 2px 12px', color: '#64748B' }}>Day {d.day}{d.label ? ` — ${d.label}` : ''}:</td>
+                    <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</td>
+                  </tr>
+                ))}
+              </>
+            ) : (
+              <tr>
+                <td style={{ padding: '2px 8px 2px 0', color: '#475569', fontWeight: 600 }}>Service Date:</td>
+                <td style={{ padding: '2px 0', color: '#0F1923' }}>{fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}</td>
+              </tr>
+            )}
             {/* Package line */}
             <tr>
               <td style={{ padding: '6px 8px 2px 0', color: '#475569', fontWeight: 600 }}>{job.package}:</td>
@@ -617,14 +630,25 @@ export default function SignPage() {
 
         <div style={card}>
           <span style={label}>Estimate summary</span>
-          {job.date && (
+          {/* Multi-day schedule or single date */}
+          {(job.multiDaySchedule || []).length > 0 ? (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '.06em', textTransform: 'uppercase', padding: '6px 0 4px' }}>Schedule — {job.multiDaySchedule.length}-day job</div>
+              {job.multiDaySchedule.map(d => (
+                <div key={d.day} style={row}>
+                  <span style={{ fontSize: 13, color: '#64748B' }}>Day {d.day}{d.label ? ` — ${d.label}` : ''}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#0F1923' }}>{fmtDate(d.date)} at {fmtTime(d.startTime)}</span>
+                </div>
+              ))}
+            </>
+          ) : job.date ? (
             <div style={row}>
               <span style={{ fontSize: 14, color: '#64748B' }}>Service date</span>
               <span style={{ fontSize: 14, fontWeight: 600, color: '#0F1923' }}>
                 {fmtDate(job.date)}{job.startTime ? ` at ${fmtTime(job.startTime)}` : ''}
               </span>
             </div>
-          )}
+          ) : null}
           {/* Package */}
           <div style={{ ...row, borderBottom: job.pkgRateLabel ? 'none' : undefined, paddingBottom: job.pkgRateLabel ? 4 : undefined }}>
             <span style={{ fontSize: 14, color: '#0F1923', fontWeight: 500 }}>{job.package}</span>
