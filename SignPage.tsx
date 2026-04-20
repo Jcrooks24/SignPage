@@ -706,7 +706,7 @@ export default function SignPage() {
                       <span style={{ fontWeight: 600 }}>{d.package}
                         {d.pkgRateLabel && <span style={{ display: 'block', fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{d.pkgRateLabel}</span>}
                       </span>
-                      <span style={{ fontWeight: 600 }}>{fmt(d.pkgPrice || 0)}</span>
+                      {(d.pkgPrice || 0) > 0 && <span style={{ fontWeight: 600 }}>{fmt(d.pkgPrice)}</span>}
                     </div>
                   )}
                   {/* Addons */}
